@@ -1,14 +1,21 @@
-
+import re
 from pyspark import SparkConf, SparkContext
 
-conf = SparkConf().setMaster("local").setAppName("FriendsByAge")
+conf = SparkConf().setMaster("local").setAppName("WordCount")
 sc = SparkContext(conf = conf)
 
-input = sc.textFile("C:/sparkData/Scala/SparkScala3/book.txt")
-words = input.flatMap(lambda x: x.split())
-wordCounts = words.countByValue()
+def normalizeWrods(text):
+    return re.compile(r'\W+', re.UNICODE).split(text.lower())
 
-for word, count int wordCounts.items():
-    cleanWrods = word.encode('ascii','ignore')
-    if(cleanWrods):
-        print(cleanWrods, count)
+input = sc.textFile("C:/sparkData/Scala/SparkScala3/book.txt")
+words = input.flatMap(normalizeWrods)
+wordCounts = words.map(lambda x: (x,1)).reduceByKey(lambda x,y: x + y)
+wordCountsSorted = wordCounts.map(lambda x,y: (y,x)).sortByKey()
+
+results = wordCountsSorted.collect()
+
+for result in results:
+    count = str(result[0])
+    word = result[1].encode('ascii','ignore')
+    if(word):
+        print(word + ":\t\t" + count)
